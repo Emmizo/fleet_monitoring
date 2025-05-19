@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:provider/provider.dart';
 import '../models/car.dart';
 import '../providers/car_provider.dart';
 import 'add_edit_car_screen.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart' as latLng2;
+import 'package:flutter_map/flutter_map.dart';
 
 class CarDetailsScreen extends StatefulWidget {
   final Car car;
-  const CarDetailsScreen({Key? key, required this.car}) : super(key: key);
+  const CarDetailsScreen({super.key, required this.car});
 
   @override
   State<CarDetailsScreen> createState() => _CarDetailsScreenState();
@@ -61,9 +61,9 @@ class _CarDetailsScreenState extends State<CarDetailsScreen> {
     String distanceText = '';
     if (_distance != null) {
       if (_distance! >= 1000) {
-        distanceText = (_distance! / 1000).toStringAsFixed(2) + ' km from you';
+        distanceText = '${(_distance! / 1000).toStringAsFixed(2)} km from you';
       } else {
-        distanceText = _distance!.toStringAsFixed(0) + ' m from you';
+        distanceText = '${_distance!.toStringAsFixed(0)} m from you';
       }
     }
     final bool invalidLocation =
@@ -192,11 +192,7 @@ class _CarDetailsScreenState extends State<CarDetailsScreen> {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'Location: (' +
-                          (lat.toStringAsFixed(5)) +
-                          ', ' +
-                          (lng.toStringAsFixed(5)) +
-                          ')',
+                      'Location: (${lat.toStringAsFixed(5)}, ${lng.toStringAsFixed(5)})',
                       style: TextStyle(fontSize: 16),
                     ),
                     SizedBox(height: 16),
@@ -208,24 +204,63 @@ class _CarDetailsScreenState extends State<CarDetailsScreen> {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(16),
-                        child: gmaps.GoogleMap(
-                          initialCameraPosition: gmaps.CameraPosition(
-                            target: gmaps.LatLng(lat, lng),
-                            zoom: 16,
-                          ),
-                          markers: {
-                            gmaps.Marker(
-                              markerId: gmaps.MarkerId(car.id.toString()),
-                              position: gmaps.LatLng(lat, lng),
-                              infoWindow: gmaps.InfoWindow(title: car.name),
+                        child: FlutterMap(
+                          options: MapOptions(
+                            initialCenter: latLng2.LatLng(lat, lng),
+                            initialZoom: 15,
+                            interactionOptions: InteractionOptions(
+                              flags: InteractiveFlag.all,
                             ),
-                          },
-                          zoomControlsEnabled: false,
-                          myLocationButtonEnabled: false,
-                          scrollGesturesEnabled: false,
-                          tiltGesturesEnabled: false,
-                          rotateGesturesEnabled: false,
-                          liteModeEnabled: true,
+                          ),
+                          children: [
+                            TileLayer(
+                              urlTemplate:
+                                  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              subdomains: ['a', 'b', 'c'],
+                              userAgentPackageName:
+                                  'com.example.fleetMonitoringApp',
+                            ),
+                            MarkerLayer(
+                              markers: [
+                                Marker(
+                                  width: 24,
+                                  height: 24,
+                                  point: latLng2.LatLng(lat, lng),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color:
+                                            car.status == 'Moving'
+                                                ? Colors.green
+                                                : Colors.red,
+                                        width: 4,
+                                      ),
+                                      color: Colors.white,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.2),
+                                          blurRadius: 6,
+                                          offset: Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    padding: EdgeInsets.all(2),
+                                    child: Icon(
+                                      car.status == 'Moving'
+                                          ? Icons.directions_car
+                                          : Icons.local_parking,
+                                      color:
+                                          car.status == 'Moving'
+                                              ? Colors.blue
+                                              : Colors.grey,
+                                      size: 10,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -236,18 +271,21 @@ class _CarDetailsScreenState extends State<CarDetailsScreen> {
                           isTracking
                               ? Icons.location_disabled
                               : Icons.location_searching,
+                          color: Colors.white,
                         ),
                         label: Text(
                           isTracking ? 'Stop Tracking' : 'Track This Car',
+                          style: TextStyle(color: Colors.white, fontSize: 18),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
-                              isTracking ? Colors.redAccent : Colors.blue,
+                              isTracking
+                                  ? kPrimaryColor.withOpacity(0.8)
+                                  : kPrimaryColor,
                           padding: EdgeInsets.symmetric(
                             horizontal: 32,
                             vertical: 14,
                           ),
-                          textStyle: TextStyle(fontSize: 18),
                         ),
                         onPressed: () {
                           if (isTracking) {

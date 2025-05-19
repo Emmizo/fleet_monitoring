@@ -15,3 +15,11 @@ For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
 # fleet_monitoring
+
+
+Steps to run this project
+
+1. set flutter envirnoment
+2. Clone project
+3. have xcode and iPhone similator
+4. then run flutter run

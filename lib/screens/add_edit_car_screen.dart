@@ -227,7 +227,10 @@ class _AddEditCarScreenState extends State<AddEditCarScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        child: Text(isEdit ? 'Update Car' : 'Add Car'),
+                        child: Text(
+                          isEdit ? 'Update Car' : 'Add Car',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                     ],
                   ),

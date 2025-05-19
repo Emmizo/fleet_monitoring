@@ -8,6 +8,7 @@ import 'car_details_screen.dart';
 import 'add_edit_car_screen.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:async';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 const Color kPrimaryColor = Color(0xFF164654);
 const Color kBackgroundColor = Color(0xFFFFFFFF);
@@ -26,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _blinkTimer;
   Timer? _refreshTimer;
   final MapController _mapController = MapController();
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -39,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _blinkTimer?.cancel();
     _refreshTimer?.cancel();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -207,25 +210,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       0.0;
                                                   Color borderColor;
                                                   if (car.status == 'Moving') {
-                                                    borderColor =
-                                                        _blink
-                                                            ? Colors.green
-                                                            : Colors
-                                                                .transparent;
+                                                    borderColor = Colors.green;
                                                   } else {
-                                                    borderColor =
-                                                        _blink
-                                                            ? Colors.red
-                                                            : Colors
-                                                                .transparent;
+                                                    borderColor = Colors.red;
                                                   }
                                                   Color iconColor =
                                                       car.status == 'Moving'
                                                           ? kPrimaryColor
                                                           : Colors.grey;
                                                   return Marker(
-                                                    width: 44,
-                                                    height: 44,
+                                                    width: 24,
+                                                    height: 24,
                                                     point: LatLng(lat, lng),
                                                     child: GestureDetector(
                                                       onTap: () {
@@ -319,7 +314,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                               : Icons
                                                                   .local_parking,
                                                           color: iconColor,
-                                                          size: 36,
+                                                          size: 10,
                                                         ),
                                                       ),
                                                     ),
@@ -381,107 +376,78 @@ class _HomeScreenState extends State<HomeScreen> {
                                     _userLocation,
                                     car,
                                   );
-                                  return Dismissible(
+                                  return Slidable(
                                     key: ValueKey(car.id),
-                                    background: Container(
-                                      color: kPrimaryColor.withAlpha(
-                                        (0.08 * 255).toInt(),
-                                      ),
-                                      alignment: Alignment.centerLeft,
-                                      padding: EdgeInsets.only(left: 24),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.visibility,
-                                            color: Colors.white,
-                                          ),
-                                          SizedBox(width: 8),
-                                          Text(
-                                            'View',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    secondaryBackground: Container(
-                                      color: Colors.red,
-                                      alignment: Alignment.centerRight,
-                                      padding: EdgeInsets.only(right: 24),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        children: [
-                                          Icon(
-                                            Icons.delete,
-                                            color: Colors.white,
-                                          ),
-                                          SizedBox(width: 8),
-                                          Text(
-                                            'Delete',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    confirmDismiss: (direction) async {
-                                      if (direction ==
-                                          DismissDirection.startToEnd) {
-                                        // View details
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder:
-                                                (_) =>
-                                                    CarDetailsScreen(car: car),
-                                          ),
-                                        );
-                                        return false;
-                                      } else if (direction ==
-                                          DismissDirection.endToStart) {
-                                        // Delete
-                                        final confirm = await showDialog<bool>(
-                                          context: context,
-                                          builder:
-                                              (context) => AlertDialog(
-                                                title: Text('Delete Car'),
-                                                content: Text(
-                                                  'Are you sure you want to delete this car?',
-                                                ),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed:
-                                                        () => Navigator.pop(
-                                                          context,
-                                                          false,
-                                                        ),
-                                                    child: Text('Cancel'),
-                                                  ),
-                                                  TextButton(
-                                                    onPressed:
-                                                        () => Navigator.pop(
-                                                          context,
-                                                          true,
-                                                        ),
-                                                    child: Text('Delete'),
-                                                  ),
-                                                ],
+                                    endActionPane: ActionPane(
+                                      motion: const DrawerMotion(),
+                                      children: [
+                                        SlidableAction(
+                                          onPressed: (context) {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (_) => CarDetailsScreen(
+                                                      car: car,
+                                                    ),
                                               ),
-                                        );
-                                        if (confirm == true) {
-                                          await Provider.of<CarProvider>(
-                                            context,
-                                            listen: false,
-                                          ).deleteCar(car.id);
-                                          return true;
-                                        }
-                                        return false;
-                                      }
-                                      return false;
-                                    },
+                                            );
+                                          },
+                                          backgroundColor: kPrimaryColor,
+                                          foregroundColor: Colors.white,
+                                          icon: Icons.remove_red_eye,
+                                          label: 'View',
+                                        ),
+                                        SlidableAction(
+                                          onPressed: (context) async {
+                                            final carProvider =
+                                                Provider.of<CarProvider>(
+                                                  context,
+                                                  listen: false,
+                                                );
+                                            final confirm = await showDialog<
+                                              bool
+                                            >(
+                                              context: context,
+                                              builder:
+                                                  (context) => AlertDialog(
+                                                    title: Text('Delete Car'),
+                                                    content: Text(
+                                                      'Are you sure you want to delete this car?',
+                                                    ),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed:
+                                                            () => Navigator.pop(
+                                                              context,
+                                                              false,
+                                                            ),
+                                                        child: Text('Cancel'),
+                                                      ),
+                                                      TextButton(
+                                                        onPressed:
+                                                            () => Navigator.pop(
+                                                              context,
+                                                              true,
+                                                            ),
+                                                        child: Text('Delete'),
+                                                      ),
+                                                    ],
+                                                  ),
+                                            );
+                                            if (confirm == true) {
+                                              await carProvider.deleteCar(
+                                                car.id,
+                                              );
+                                            }
+                                          },
+                                          backgroundColor: Colors.red,
+                                          foregroundColor: Colors.white,
+                                          icon: Icons.delete,
+                                          label: 'Delete',
+                                        ),
+                                      ],
+                                    ),
                                     child: Card(
                                       color: kBackgroundColor,
                                       elevation: 3,
@@ -601,10 +567,10 @@ class _HomeScreenState extends State<HomeScreen> {
             MaterialPageRoute(builder: (_) => AddEditCarScreen()),
           );
         },
-        child: Icon(Icons.add, color: kPrimaryColor, size: 32),
         backgroundColor: Colors.white,
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Icon(Icons.add, color: kPrimaryColor, size: 32),
       ),
     );
   }
@@ -612,17 +578,42 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSearchBar(BuildContext context) {
     final carProvider = Provider.of<CarProvider>(context, listen: false);
     return Material(
-      elevation: 4,
-      borderRadius: BorderRadius.circular(24),
+      elevation: 6,
+      borderRadius: BorderRadius.circular(10),
       color: Colors.white,
       child: TextField(
+        controller: _searchController,
         decoration: InputDecoration(
           hintText: 'Search by name or ID',
           prefixIcon: Icon(Icons.search, color: kPrimaryColor),
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          suffixIcon:
+              _searchController.text.isNotEmpty
+                  ? IconButton(
+                    icon: Icon(Icons.clear, color: Colors.grey),
+                    onPressed: () {
+                      _searchController.clear();
+                      carProvider.setSearchQuery('');
+                    },
+                  )
+                  : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: kPrimaryColor, width: 1.2),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: kPrimaryColor, width: 1.2),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: kPrimaryColor, width: 2),
+          ),
+          contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         ),
-        onChanged: carProvider.setSearchQuery,
+        style: TextStyle(fontSize: 18),
+        onChanged: (value) {
+          carProvider.setSearchQuery(value);
+        },
       ),
     );
   }
