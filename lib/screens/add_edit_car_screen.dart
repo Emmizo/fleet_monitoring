@@ -21,6 +21,7 @@ class _AddEditCarScreenState extends State<AddEditCarScreen> {
   late TextEditingController _longitudeController;
   late TextEditingController _speedController;
   late TextEditingController _statusController;
+  String _selectedStatus = 'Moving';
 
   @override
   void initState() {
@@ -35,7 +36,8 @@ class _AddEditCarScreenState extends State<AddEditCarScreen> {
     _speedController = TextEditingController(
       text: widget.car?.speed.toString() ?? '',
     );
-    _statusController = TextEditingController(text: widget.car?.status ?? '');
+    _selectedStatus = widget.car?.status ?? 'Moving';
+    _statusController = TextEditingController(text: _selectedStatus);
   }
 
   @override
@@ -57,7 +59,7 @@ class _AddEditCarScreenState extends State<AddEditCarScreen> {
         latitude: _latitudeController.text,
         longitude: _longitudeController.text,
         speed: int.tryParse(_speedController.text) ?? 0,
-        status: _statusController.text,
+        status: _selectedStatus,
       );
       if (widget.car == null) {
         await carProvider.addCar(car);
@@ -160,14 +162,55 @@ class _AddEditCarScreenState extends State<AddEditCarScreen> {
                         keyboardType: TextInputType.number,
                       ),
                       SizedBox(height: 18),
-                      _buildTextField(
-                        _statusController,
-                        'Status',
-                        Icons.flag,
+                      DropdownButtonFormField<String>(
+                        value: _selectedStatus,
+                        decoration: InputDecoration(
+                          labelText: 'Status',
+                          prefixIcon: Icon(Icons.flag, color: kPrimaryColor),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide(
+                              color: kPrimaryColor,
+                              width: 1.2,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide(
+                              color: kPrimaryColor.withOpacity(0.2),
+                              width: 1.2,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide(
+                              color: kPrimaryColor,
+                              width: 1.8,
+                            ),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 16,
+                          ),
+                        ),
+                        items:
+                            ['Moving', 'Parked']
+                                .map(
+                                  (status) => DropdownMenuItem(
+                                    value: status,
+                                    child: Text(status),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedStatus = value!;
+                          });
+                        },
                         validator:
                             (value) =>
                                 value == null || value.isEmpty
-                                    ? 'Enter status'
+                                    ? 'Select status'
                                     : null,
                       ),
                       SizedBox(height: 32),

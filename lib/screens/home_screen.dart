@@ -25,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _blink = true;
   Timer? _blinkTimer;
   Timer? _refreshTimer;
+  final MapController _mapController = MapController();
 
   @override
   void initState() {
@@ -156,153 +157,218 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               SizedBox(
                                 height: 250,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(18),
-                                  child: FlutterMap(
-                                    options: MapOptions(
-                                      initialCenter:
-                                          bounds != null
-                                              ? bounds.center
-                                              : _initialPosition,
-                                      initialZoom: 14,
-                                      initialCameraFit:
-                                          bounds != null
-                                              ? CameraFit.bounds(
-                                                bounds: bounds,
-                                                padding: EdgeInsets.all(20),
-                                              )
-                                              : null,
-                                    ),
-                                    children: [
-                                      TileLayer(
-                                        urlTemplate:
-                                            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                        subdomains: ['a', 'b', 'c'],
-                                        userAgentPackageName:
-                                            'com.example.fleetMonitoringApp',
-                                      ),
-                                      MarkerLayer(
-                                        markers:
-                                            cars.map((car) {
-                                              double lat =
-                                                  double.tryParse(
-                                                    car.latitude.toString(),
-                                                  ) ??
-                                                  0.0;
-                                              double lng =
-                                                  double.tryParse(
-                                                    car.longitude.toString(),
-                                                  ) ??
-                                                  0.0;
-                                              Color borderColor;
-                                              if (car.status == 'Moving') {
-                                                borderColor =
-                                                    _blink
-                                                        ? Colors.green
-                                                        : Colors.transparent;
-                                              } else {
-                                                borderColor =
-                                                    _blink
-                                                        ? Colors.red
-                                                        : Colors.transparent;
-                                              }
-                                              Color iconColor =
-                                                  car.status == 'Moving'
-                                                      ? kPrimaryColor
-                                                      : Colors.grey;
-                                              return Marker(
-                                                width: 44,
-                                                height: 44,
-                                                point: LatLng(lat, lng),
-                                                child: GestureDetector(
-                                                  onTap: () {
-                                                    if (lat == 0.0 &&
-                                                        lng == 0.0) {
-                                                      showDialog(
-                                                        context: context,
-                                                        builder:
-                                                            (_) => AlertDialog(
-                                                              title: Text(
-                                                                'Invalid Location',
-                                                              ),
-                                                              content: Text(
-                                                                'This car does not have a valid location.',
+                                child: Stack(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(18),
+                                      child: FlutterMap(
+                                        mapController: _mapController,
+                                        options: MapOptions(
+                                          initialCenter:
+                                              bounds != null
+                                                  ? bounds.center
+                                                  : _initialPosition,
+                                          initialZoom: 14,
+                                          initialCameraFit:
+                                              bounds != null
+                                                  ? CameraFit.bounds(
+                                                    bounds: bounds,
+                                                    padding: EdgeInsets.all(20),
+                                                  )
+                                                  : null,
+                                          minZoom: 3,
+                                          maxZoom: 18,
+                                          interactionOptions:
+                                              const InteractionOptions(
+                                                flags: InteractiveFlag.all,
+                                              ),
+                                        ),
+                                        children: [
+                                          TileLayer(
+                                            urlTemplate:
+                                                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                            subdomains: ['a', 'b', 'c'],
+                                            userAgentPackageName:
+                                                'com.example.fleetMonitoringApp',
+                                          ),
+                                          MarkerLayer(
+                                            markers:
+                                                cars.map((car) {
+                                                  double lat =
+                                                      double.tryParse(
+                                                        car.latitude.toString(),
+                                                      ) ??
+                                                      0.0;
+                                                  double lng =
+                                                      double.tryParse(
+                                                        car.longitude
+                                                            .toString(),
+                                                      ) ??
+                                                      0.0;
+                                                  Color borderColor;
+                                                  if (car.status == 'Moving') {
+                                                    borderColor =
+                                                        _blink
+                                                            ? Colors.green
+                                                            : Colors
+                                                                .transparent;
+                                                  } else {
+                                                    borderColor =
+                                                        _blink
+                                                            ? Colors.red
+                                                            : Colors
+                                                                .transparent;
+                                                  }
+                                                  Color iconColor =
+                                                      car.status == 'Moving'
+                                                          ? kPrimaryColor
+                                                          : Colors.grey;
+                                                  return Marker(
+                                                    width: 44,
+                                                    height: 44,
+                                                    point: LatLng(lat, lng),
+                                                    child: GestureDetector(
+                                                      onTap: () {
+                                                        if (lat == 0.0 &&
+                                                            lng == 0.0) {
+                                                          showDialog(
+                                                            context: context,
+                                                            builder:
+                                                                (
+                                                                  _,
+                                                                ) => AlertDialog(
+                                                                  title: Text(
+                                                                    'Invalid Location',
+                                                                  ),
+                                                                  content: Text(
+                                                                    'This car does not have a valid location.',
+                                                                  ),
+                                                                ),
+                                                          );
+                                                          return;
+                                                        }
+                                                        double? dist;
+                                                        String distText = '';
+                                                        if (_userLocation !=
+                                                            null) {
+                                                          final Distance
+                                                          distance = Distance();
+                                                          dist = distance.as(
+                                                            LengthUnit.Meter,
+                                                            _userLocation!,
+                                                            LatLng(lat, lng),
+                                                          );
+                                                          if (dist >= 1000) {
+                                                            distText =
+                                                                '\nDistance: ${(dist / 1000).toStringAsFixed(2)} km';
+                                                          } else {
+                                                            distText =
+                                                                '\nDistance: ${dist.toStringAsFixed(0)} m';
+                                                          }
+                                                        } else {
+                                                          distText =
+                                                              '\nDistance: unknown (location not available)';
+                                                        }
+                                                        ScaffoldMessenger.of(
+                                                          context,
+                                                        ).showSnackBar(
+                                                          SnackBar(
+                                                            content: Text(
+                                                              '${car.name} (${car.status})\nSpeed: ${car.speed} km/h\nLocation: (${lat.toStringAsFixed(5)}, ${lng.toStringAsFixed(5)})$distText',
+                                                            ),
+                                                            duration: Duration(
+                                                              seconds: 4,
+                                                            ),
+                                                            behavior:
+                                                                SnackBarBehavior
+                                                                    .floating,
+                                                          ),
+                                                        );
+                                                      },
+                                                      child: Container(
+                                                        decoration: BoxDecoration(
+                                                          shape:
+                                                              BoxShape.circle,
+                                                          border: Border.all(
+                                                            color: borderColor,
+                                                            width: 4,
+                                                          ),
+                                                          color: Colors.white,
+                                                          boxShadow: [
+                                                            BoxShadow(
+                                                              color: kPrimaryColor
+                                                                  .withAlpha(
+                                                                    (0.08 * 255)
+                                                                        .toInt(),
+                                                                  ),
+                                                              blurRadius: 6,
+                                                              offset: Offset(
+                                                                0,
+                                                                2,
                                                               ),
                                                             ),
-                                                      );
-                                                      return;
-                                                    }
-                                                    double? dist;
-                                                    if (_userLocation != null) {
-                                                      final Distance distance =
-                                                          Distance();
-                                                      dist = distance.as(
-                                                        LengthUnit.Meter,
-                                                        _userLocation!,
-                                                        LatLng(lat, lng),
-                                                      );
-                                                    }
-                                                    String distText = '';
-                                                    if (dist != null) {
-                                                      if (dist >= 1000) {
-                                                        distText =
-                                                            '\nDistance: ${(dist / 1000).toStringAsFixed(2)} km';
-                                                      } else {
-                                                        distText =
-                                                            '\nDistance: ${dist.toStringAsFixed(0)} m';
-                                                      }
-                                                    }
-                                                    ScaffoldMessenger.of(
-                                                      context,
-                                                    ).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                          '${car.name} (${car.status})\nSpeed: ${car.speed} km/h\nLocation: (${lat.toStringAsFixed(5)}, ${lng.toStringAsFixed(5)})$distText',
+                                                          ],
                                                         ),
-                                                        duration: Duration(
-                                                          seconds: 4,
+                                                        padding: EdgeInsets.all(
+                                                          2,
                                                         ),
-                                                        behavior:
-                                                            SnackBarBehavior
-                                                                .floating,
+                                                        child: Icon(
+                                                          car.status == 'Moving'
+                                                              ? Icons
+                                                                  .directions_car
+                                                              : Icons
+                                                                  .local_parking,
+                                                          color: iconColor,
+                                                          size: 36,
+                                                        ),
                                                       ),
-                                                    );
-                                                  },
-                                                  child: Container(
-                                                    decoration: BoxDecoration(
-                                                      shape: BoxShape.circle,
-                                                      border: Border.all(
-                                                        color: borderColor,
-                                                        width: 4,
-                                                      ),
-                                                      color: Colors.white,
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                          color: kPrimaryColor
-                                                              .withAlpha(
-                                                                (0.08 * 255)
-                                                                    .toInt(),
-                                                              ),
-                                                          blurRadius: 6,
-                                                          offset: Offset(0, 2),
-                                                        ),
-                                                      ],
                                                     ),
-                                                    padding: EdgeInsets.all(2),
-                                                    child: Icon(
-                                                      car.status == 'Moving'
-                                                          ? Icons.directions_car
-                                                          : Icons.local_parking,
-                                                      color: iconColor,
-                                                      size: 36,
-                                                    ),
-                                                  ),
-                                                ),
-                                              );
-                                            }).toList(),
+                                                  );
+                                                }).toList(),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                    Positioned(
+                                      bottom: 12,
+                                      right: 12,
+                                      child: Column(
+                                        children: [
+                                          FloatingActionButton(
+                                            mini: true,
+                                            heroTag: 'zoomIn',
+                                            backgroundColor: kPrimaryColor,
+                                            child: Icon(
+                                              Icons.add,
+                                              color: Colors.white,
+                                            ),
+                                            onPressed: () {
+                                              _mapController.move(
+                                                _mapController.center,
+                                                _mapController.zoom + 1,
+                                              );
+                                            },
+                                          ),
+                                          SizedBox(height: 8),
+                                          FloatingActionButton(
+                                            mini: true,
+                                            heroTag: 'zoomOut',
+                                            backgroundColor: kPrimaryColor,
+                                            child: Icon(
+                                              Icons.remove,
+                                              color: Colors.white,
+                                            ),
+                                            onPressed: () {
+                                              _mapController.move(
+                                                _mapController.center,
+                                                _mapController.zoom - 1,
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                               ListView.builder(
